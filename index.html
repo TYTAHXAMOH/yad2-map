@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Выбор области поиска Yad2</title>
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Leaflet CSS & JS (Карты OpenStreetMap) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Leaflet-Geoman (Инструменты рисования полигонов и кругов) -->
+  <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+  <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--tg-theme-bg-color, #18181b);
+      color: var(--tg-theme-text-color, #ffffff);
+    }
+    #map {
+      width: 100%;
+      height: calc(100% - 70px);
+    }
+    .bottom-bar {
+      height: 70px;
+      padding: 10px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--tg-theme-secondary-bg-color, #27272a);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .info-text {
+      font-size: 13px;
+      line-height: 1.2;
+      color: var(--tg-theme-hint-color, #a1a1aa);
+      max-width: 60%;
+    }
+    .save-btn {
+      flex: 1;
+      height: 48px;
+      background-color: var(--tg-theme-button-color, #2563eb);
+      color: var(--tg-theme-button-text-color, #ffffff);
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.2s;
+    }
+    .save-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background-color: #52525b;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <div class="bottom-bar">
+    <div class="info-text" id="status-text">
+      Нарисуйте область на карте (инструмент ⬡ слева)
+    </div>
+    <button class="save-btn" id="save-btn" disabled>
+      ✅ Сохранить
+    </button>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    // Инициализация карты (центр: Тель-Авив / Центр Израиля)
+    const map = L.map('map', {
+      zoomControl: false
+    }).setView([32.0853, 34.7818], 13);
+
+    // Добавляем кнопки зума в правый верхний угол
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // Слой тайлов OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Подключение панели рисования Geoman
+    map.pm.addControls({
+      position: 'topleft',
+      drawPolygon: true,
+      drawCircle: true,
+      drawRectangle: true,
+      drawMarker: false,
+      drawCircleMarker: false,
+      drawPolyline: false,
+      editMode: true,
+      dragMode: true,
+      cutPolygon: false,
+      removalMode: true
+    });
+
+    // Настройка языка и подсказок
+    map.pm.setLang('ru');
+
+    const saveBtn = document.getElementById('save-btn');
+    const statusText = document.getElementById('status-text');
+
+    function updateState() {
+      const layers = map.pm.getGeomanLayers();
+      if (layers.length > 0) {
+        saveBtn.disabled = false;
+        statusText.innerHTML = `Выбрано зон: <b>${layers.length}</b>`;
+      } else {
+        saveBtn.disabled = true;
+        statusText.innerHTML = 'Нарисуйте область на карте (инструмент ⬡ слева)';
+      }
+    }
+
+    map.on('pm:create', function() {
+      updateState();
+    });
+
+    map.on('pm:remove', function() {
+      updateState();
+    });
+
+    // Кнопка Сохранить -> отправка в Telegram Bot
+    saveBtn.addEventListener('click', function() {
+      const layers = map.pm.getGeomanLayers();
+      if (layers.length === 0) return;
+
+      const featureCollection = {
+        type: "FeatureCollection",
+        features: []
+      };
+
+      layers.forEach(layer => {
+        if (layer.toGeoJSON) {
+          featureCollection.features.push(layer.toGeoJSON());
+        }
+      });
+
+      const jsonStr = JSON.stringify(featureCollection);
+
+      if (tg && tg.sendData) {
+        tg.sendData(jsonStr);
+      } else {
+        alert("Готово! GeoJSON скопирован в консоль (в Telegram отправится боту автоматически)");
+        console.log(jsonStr);
+      }
+    });
+
+    // Пытаемся определить текущую геопозицию пользователя
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          map.setView([pos.coords.latitude, pos.coords.longitude], 14);
+        },
+        () => {}
+      );
+    }
+  </script>
+</body>
+</html>
