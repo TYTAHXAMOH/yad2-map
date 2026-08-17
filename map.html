@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Выбор области поиска Yad2</title>
+  <title>╨Т╤Л╨▒╨╛╤А ╨╛╨▒╨╗╨░╤Б╤В╨╕ ╨┐╨╛╨╕╤Б╨║╨░ Yad2</title>
   
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Leaflet CSS & JS (Карты OpenStreetMap) -->
+  <!-- Leaflet CSS & JS (╨Ъ╨░╤А╤В╤Л OpenStreetMap) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Leaflet-Geoman (Инструменты рисования полигонов и кругов) -->
+  <!-- Leaflet-Geoman (╨Ш╨╜╤Б╤В╤А╤Г╨╝╨╡╨╜╤В╤Л ╤А╨╕╤Б╨╛╨▓╨░╨╜╨╕╤П ╨┐╨╛╨╗╨╕╨│╨╛╨╜╨╛╨▓ ╨╕ ╨║╤А╤Г╨│╨╛╨▓) -->
   <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
   <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
 
@@ -80,10 +80,10 @@
 
   <div class="bottom-bar">
     <div class="info-text" id="status-text">
-      Нарисуйте область на карте (инструмент ? слева)
+      ╨Э╨░╤А╨╕╤Б╤Г╨╣╤В╨╡ ╨╛╨▒╨╗╨░╤Б╤В╤М ╨╜╨░ ╨║╨░╤А╤В╨╡ (╨╕╨╜╤Б╤В╤А╤Г╨╝╨╡╨╜╤В тмб ╤Б╨╗╨╡╨▓╨░)
     </div>
     <button class="save-btn" id="save-btn" disabled>
-      ? Сохранить
+      тЬЕ ╨б╨╛╤Е╤А╨░╨╜╨╕╤В╤М
     </button>
   </div>
 
@@ -94,21 +94,21 @@
       tg.expand();
     }
 
-    // Инициализация карты (центр: Тель-Авив / Центр Израиля)
+    // ╨Ш╨╜╨╕╤Ж╨╕╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П ╨║╨░╤А╤В╤Л (╤Ж╨╡╨╜╤В╤А: ╨в╨╡╨╗╤М-╨Р╨▓╨╕╨▓ / ╨ж╨╡╨╜╤В╤А ╨Ш╨╖╤А╨░╨╕╨╗╤П)
     const map = L.map('map', {
       zoomControl: false
     }).setView([32.0853, 34.7818], 13);
 
-    // Добавляем кнопки зума в правый верхний угол
+    // ╨Ф╨╛╨▒╨░╨▓╨╗╤П╨╡╨╝ ╨║╨╜╨╛╨┐╨║╨╕ ╨╖╤Г╨╝╨░ ╨▓ ╨┐╤А╨░╨▓╤Л╨╣ ╨▓╨╡╤А╤Е╨╜╨╕╨╣ ╤Г╨│╨╛╨╗
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Слой тайлов OpenStreetMap
+    // ╨б╨╗╨╛╨╣ ╤В╨░╨╣╨╗╨╛╨▓ OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: 'c OpenStreetMap'
+      attribution: '┬й OpenStreetMap'
     }).addTo(map);
 
-    // Подключение панели рисования Geoman
+    // ╨Я╨╛╨┤╨║╨╗╤О╤З╨╡╨╜╨╕╨╡ ╨┐╨░╨╜╨╡╨╗╨╕ ╤А╨╕╤Б╨╛╨▓╨░╨╜╨╕╤П Geoman
     map.pm.addControls({
       position: 'topleft',
       drawPolygon: true,
@@ -123,7 +123,7 @@
       removalMode: true
     });
 
-    // Настройка языка
+    // ╨Э╨░╤Б╤В╤А╨╛╨╣╨║╨░ ╤П╨╖╤Л╨║╨░ ╨╕ ╨┐╨╛╨┤╤Б╨║╨░╨╖╨╛╨║
     map.pm.setLang('ru');
 
     const saveBtn = document.getElementById('save-btn');
@@ -133,10 +133,10 @@
       const layers = map.pm.getGeomanLayers();
       if (layers.length > 0) {
         saveBtn.disabled = false;
-        statusText.innerHTML = `Выбрано зон: <b>${layers.length}</b>`;
+        statusText.innerHTML = `╨Т╤Л╨▒╤А╨░╨╜╨╛ ╨╖╨╛╨╜: <b>${layers.length}</b>`;
       } else {
         saveBtn.disabled = true;
-        statusText.innerHTML = 'Нарисуйте область на карте (инструмент ? слева)';
+        statusText.innerHTML = '╨Э╨░╤А╨╕╤Б╤Г╨╣╤В╨╡ ╨╛╨▒╨╗╨░╤Б╤В╤М ╨╜╨░ ╨║╨░╤А╤В╨╡ (╨╕╨╜╤Б╤В╤А╤Г╨╝╨╡╨╜╤В тмб ╤Б╨╗╨╡╨▓╨░)';
       }
     }
 
@@ -148,7 +148,7 @@
       updateState();
     });
 
-    // Кнопка Сохранить -> отправка геометрии в Telegram Bot
+    // ╨Ъ╨╜╨╛╨┐╨║╨░ ╨б╨╛╤Е╤А╨░╨╜╨╕╤В╤М -> ╨╛╤В╨┐╤А╨░╨▓╨║╨░ ╨▓ Telegram Bot
     saveBtn.addEventListener('click', function() {
       const layers = map.pm.getGeomanLayers();
       if (layers.length === 0) return;
@@ -169,12 +169,12 @@
       if (tg && tg.sendData) {
         tg.sendData(jsonStr);
       } else {
-        alert("Область готова!");
+        alert("╨У╨╛╤В╨╛╨▓╨╛! GeoJSON ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜ ╨▓ ╨║╨╛╨╜╤Б╨╛╨╗╤М (╨▓ Telegram ╨╛╤В╨┐╤А╨░╨▓╨╕╤В╤Б╤П ╨▒╨╛╤В╤Г ╨░╨▓╤В╨╛╨╝╨░╤В╨╕╤З╨╡╤Б╨║╨╕)");
         console.log(jsonStr);
       }
     });
 
-    // Автоматическая центровка на местоположение пользователя (если разрешено)
+    // ╨Я╤Л╤В╨░╨╡╨╝╤Б╤П ╨╛╨┐╤А╨╡╨┤╨╡╨╗╨╕╤В╤М ╤В╨╡╨║╤Г╤Й╤Г╤О ╨│╨╡╨╛╨┐╨╛╨╖╨╕╤Ж╨╕╤О ╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤П
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
