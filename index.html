@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Выбор области поиска Yad2</title>
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Leaflet-Geoman -->
+  <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+  <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--tg-theme-bg-color, #18181b);
+      color: var(--tg-theme-text-color, #ffffff);
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    .top-hint {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(24, 24, 27, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.15);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .floating-save-btn {
+      position: absolute;
+      bottom: 24px;
+      left: 16px;
+      right: 16px;
+      z-index: 1000;
+      height: 50px;
+      background-color: var(--tg-theme-button-color, #2563eb);
+      color: var(--tg-theme-button-text-color, #ffffff);
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-hint" id="top-hint">
+    Нажмите ⬡ слева и нарисуйте область
+  </div>
+
+  <div id="map"></div>
+
+  <button class="floating-save-btn" id="floating-btn">
+    ✅ Сохранить область для бота
+  </button>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    // Инициализация карты
+    const map = L.map('map', {
+      zoomControl: false
+    }).setView([32.0853, 34.7818], 13);
+
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Панель Geoman
+    map.pm.addControls({
+      position: 'topleft',
+      drawPolygon: true,
+      drawCircle: true,
+      drawRectangle: true,
+      drawMarker: false,
+      drawCircleMarker: false,
+      drawPolyline: false,
+      editMode: true,
+      dragMode: true,
+      cutPolygon: false,
+      removalMode: true
+    });
+
+    map.pm.setLang('ru');
+
+    const topHint = document.getElementById('top-hint');
+    const floatingBtn = document.getElementById('floating-btn');
+
+    function getCombinedGeoJSON() {
+      const layers = map.pm.getGeomanLayers();
+      if (layers.length === 0) return null;
+
+      const featureCollection = {
+        type: "FeatureCollection",
+        features: []
+      };
+
+      layers.forEach(layer => {
+        if (layer.toGeoJSON) {
+          featureCollection.features.push(layer.toGeoJSON());
+        }
+      });
+      return JSON.stringify(featureCollection);
+    }
+
+    function sendDataToBot() {
+      const jsonStr = getCombinedGeoJSON();
+      if (!jsonStr) return;
+
+      topHint.innerText = "⏳ Сохранение и отправка боту...";
+
+      if (tg) {
+        try {
+          tg.sendData(jsonStr);
+          tg.close();
+          return;
+        } catch (e) {
+          console.error("sendData error:", e);
+        }
+      }
+
+      // Если в браузере или в WebApp без прямой кнопки
+      alert("Область сохранена!");
+    }
+
+    function updateState() {
+      const layers = map.pm.getGeomanLayers();
+      if (layers.length > 0) {
+        topHint.innerHTML = `Выделено зон: <b>${layers.length}</b>. Нажмите «Сохранить»`;
+        floatingBtn.style.display = "flex";
+
+        // Включаем нативную кнопку Telegram MainButton
+        if (tg && tg.MainButton) {
+          tg.MainButton.text = `✅ СОХРАНИТЬ ОБЛАСТЬ (${layers.length})`;
+          tg.MainButton.show();
+          tg.MainButton.onClick(sendDataToBot);
+        }
+      } else {
+        topHint.innerText = "Нажмите ⬡ слева и нарисуйте область";
+        floatingBtn.style.display = "none";
+        if (tg && tg.MainButton) {
+          tg.MainButton.hide();
+        }
+      }
+    }
+
+    map.on('pm:create', updateState);
+    map.on('pm:remove', updateState);
+    map.on('pm:dragend', updateState);
+    map.on('pm:edit', updateState);
+
+    floatingBtn.addEventListener('click', sendDataToBot);
+
+    // Геолокация
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          map.setView([pos.coords.latitude, pos.coords.longitude], 14);
+        },
+        () => {}
+      );
+    }
+  </script>
+</body>
+</html>
